@@ -1,0 +1,5 @@
+pathlib==1.0.1
+pyaes==1.6.1
+Pyrogram==0.16.0
+PySocks==1.7.0
+TgCrypto==1.2.0
