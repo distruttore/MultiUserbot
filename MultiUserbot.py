@@ -23,15 +23,19 @@ afkMessage = "Sorry, I'm currently unavaible.\n" \
 Boring stuff
 """
 
+import sys
+
+if sys.version_info.major != 3:
+    raise Exception("You need python 3")
+elif sys.version_info.minor < 7:
+    print("You should use python 3.7 or higher.\n")
 import os
-import random
 import time
 from datetime import datetime
 from pathlib import Path
-import random
-import string
 import requests
 from pyrogram import Client, Filters, Emoji
+from pyrogram.errors import *
 
 users = {}
 afk = False
@@ -129,6 +133,11 @@ def commands_command(Client, msg):
                   "/paste - in reply, posts the message text on del.dog\n"
                   "/short - in reply, looks for links and make them shorter\n"
                   "/download - in reply, downloads medias from a message (photos, documents...)\n"
+                  "/save - in reply, saves the replied message in saved messages.\n"
+                  "/google keywords - it'll make a google search with keywords.\n"
+                  "/flood amount text - send amount times text.\n"
+                  "/setfloodtimeout time - sets the timeout of /flood at time seconds. (default to 1)\n"
+                  ""
                   "\n"
                   "Prefixes: . / ! #")
 
@@ -160,14 +169,15 @@ def info_command(Client, msg):
             uphotoref = uphoto.file_ref
             bot.send_photo(msg.chat.id,
                            uphotoid,
-                           file_ref= uphotoref, caption=
+                           file_ref=uphotoref, caption=
                            f"{Emoji.INFORMATION} Info {Emoji.INFORMATION}\n\n"
                            f"{Emoji.ID_BUTTON} ID: `{msg.reply_to_message.from_user.id}`\n"
                            f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} Name: `{msg.reply_to_message.from_user.first_name}`\n"
                            f"{Emoji.BUST_IN_SILHOUETTE} Last Name: `{msg.reply_to_message.from_user.last_name}`\n"
                            f"{Emoji.LINK} Username: `{msg.reply_to_message.from_user.username}`\n" +
                            (f"{Emoji.TRIDENT_EMBLEM} Bio: {user_chat.description}\n" if user_chat.description else "") +
-                           (f"{Emoji.DESKTOP_COMPUTER} Dc: `{msg.reply_to_message.from_user.dc_id}`\n" if msg.reply_to_message.from_user.dc_id else f"{Emoji.DESKTOP_COMPUTER} Dc: `Unknown`\n") +
+                           (
+                               f"{Emoji.DESKTOP_COMPUTER} Dc: `{msg.reply_to_message.from_user.dc_id}`\n" if msg.reply_to_message.from_user.dc_id else f"{Emoji.DESKTOP_COMPUTER} Dc: `Unknown`\n") +
                            (f"{Emoji.TRIDENT_EMBLEM} Status: `{msg.reply_to_message.from_user.status}`\n" +
                             f"{Emoji.TWELVE_O_CLOCK} Last Online Status: `{datetime.fromtimestamp(msg.reply_to_message.from_user.last_online_date).strftime('%H:%M %d/%m/%Y')}`\n" if msg.reply_to_message.from_user.last_online_date else f"{Emoji.TRIDENT_EMBLEM} Status: `{msg.reply_to_message.from_user.status}`\n") +
                            f"{Emoji.ROBOT_FACE} Is Bot: `{msg.reply_to_message.from_user.is_bot}`\n"
@@ -207,21 +217,23 @@ def chat_info_command(Client, msg):
         uphotoref = uphoto.file_ref
         msg.delete()
         bot.send_photo(msg.chat.id, uphotoid, file_ref=uphotoref, caption=
-                       f"{Emoji.INFORMATION} Chat Info {Emoji.INFORMATION}\n\n" +
-                       f"".join([f"{Emoji.BUST_IN_SILHOUETTE} Title: <code>{tchat.title}</code>\n" if tchat.title else (f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} First Name: <code>{tchat.first_name}</code> \n{Emoji.BUST_IN_SILHOUETTE} Last Name: <code>{tchat.last_name}</code>\n" if tchat.last_name else  f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} First Name: <code>{tchat.first_name}</code>\n")]) +
-                       f"".join([f"{Emoji.INPUT_NUMBERS} Members count: <code>{tchat.members_count}</code>\n" if tchat.members_count else ""]) +
-                       f"{Emoji.ID_BUTTON} Id: <code>{tchat.id}</code>\n"
-                       f"{Emoji.JAPANESE_SYMBOL_FOR_BEGINNER} Type: <code>{tchat.type}</code>\n"
-                       f"{Emoji.LINK} Username: <code>{tchat.username}</code>\n" +
-                       f"".join([f"{Emoji.TRIDENT_EMBLEM} Bio: <code>{tchat.description}</code>\n" if tchat.description else ""]) +
-                       f"")
+        f"{Emoji.INFORMATION} Chat Info {Emoji.INFORMATION}\n\n" +
+        f"".join([f"{Emoji.BUST_IN_SILHOUETTE} Title: <code>{tchat.title}</code>\n" if tchat.title else (
+            f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} First Name: <code>{tchat.first_name}</code> \n{Emoji.BUST_IN_SILHOUETTE} Last Name: <code>{tchat.last_name}</code>\n" if tchat.last_name else f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} First Name: <code>{tchat.first_name}</code>\n")]) +
+        f"".join([
+            f"{Emoji.INPUT_NUMBERS} Members count: <code>{tchat.members_count}</code>\n" if tchat.members_count else ""]) +
+        f"{Emoji.ID_BUTTON} Id: <code>{tchat.id}</code>\n"
+        f"{Emoji.JAPANESE_SYMBOL_FOR_BEGINNER} Type: <code>{tchat.type}</code>\n"
+        f"{Emoji.LINK} Username: <code>{tchat.username}</code>\n" +
+        f"".join([f"{Emoji.TRIDENT_EMBLEM} Bio: <code>{tchat.description}</code>\n" if tchat.description else ""]) +
+        f"")
     else:
         msg.edit(
             f"{Emoji.INFORMATION} Chat Info {Emoji.INFORMATION}\n\n" +
             f"".join([f"{Emoji.BUST_IN_SILHOUETTE} Title: <code>{tchat.title}</code>\n" if tchat.title else (
                 f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} First Name: <code>{tchat.first_name}</code> \n{Emoji.BUST_IN_SILHOUETTE} Last Name: <code>{tchat.last_name}</code>\n" if tchat.last_name else f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} First Name: <code>{tchat.first_name}</code>\n")]) +
             f"".join([
-                         f"{Emoji.INPUT_NUMBERS} Members count: <code>{tchat.members_count}</code>\n" if tchat.members_count else ""]) +
+                f"{Emoji.INPUT_NUMBERS} Members count: <code>{tchat.members_count}</code>\n" if tchat.members_count else ""]) +
             f"{Emoji.ID_BUTTON} Id: <code>{tchat.id}</code>\n"
             f"{Emoji.JAPANESE_SYMBOL_FOR_BEGINNER} Type: <code>{tchat.type}</code>\n"
             f"{Emoji.LINK} Username: <code>{tchat.username}</code>\n" +
@@ -246,7 +258,7 @@ def paste_command(Client, msg):
                                                     f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}"); return 1
     msg.edit_text(f"{Emoji.GLOBE_WITH_MERIDIANS} PASTE {Emoji.GLOBE_WITH_MERIDIANS}\n"
                   f"\n"
-                  f"{Emoji.LINK} Url: https://del.dog/{requests.post('https://del.dog/documents?frontend=true', data=msg.reply_to_message.text.encode('UTF-8')).json()['key']}\n"
+                  f"{Emoji.LINK} Url: https://del.dog/{requests.post('https://del.dog/documents?frontend=true', data=msg.reply_to_message.text.encode('UTF-8'), headers={'Content-Type': 'application/json, charset=utf-8'}).json()['key']}\n"
                   f"{Emoji.INPUT_LATIN_UPPERCASE} Text: {msg.reply_to_message.text[0:100]}...\n"
                   f"\n"
                   f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}")
@@ -344,6 +356,80 @@ def download_command(Client, msg):
         f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}")
 
 
+@bot.on_message(Filters.user("self") & Filters.reply & Filters.command("save", prefixes=[".", "/", "!", "#"]))
+def save_command(Client, msg):
+    try:
+        msg.reply_to_message.forward("me")
+    except Exception as e:
+        msg.edit_text(f"{Emoji.CROSS_MARK} Error:\n"
+                      f"\n"
+                      f"{e}")
+    else:
+        msg.edit_text(f"{Emoji.WHITE_HEAVY_CHECK_MARK} Done!")
+        time.sleep(1)
+        msg.delete()
+
+
+flood_timeout = 1
+
+
+@bot.on_message(Filters.user("self") & Filters.command("flood", prefixes=[".", "/", "!", "#"]))
+def flood_command(Client, msg):
+    if len(msg.command) < 3:
+        msg.edit_text(f"{Emoji.CROSS_MARK} Please use: \n<code>/flood amount text</code>")
+        return 1
+    amount = msg.command[1]
+    text = " ".join(msg.command[2:])
+    try:
+        amount = int(amount)
+    except ValueError:
+        msg.edit_text(f"{Emoji.CROSS_MARK} Value Error: {amount} is not a valid number.")
+        return
+    msg.edit_text(f"{Emoji.HEAVY_MINUS_SIGN} Started...")
+    c = 0
+    for i in range(amount):
+        try:
+            bot.send_message(msg.chat.id, text)
+        except FloodWait as e:
+            print(f"Sleeping {e.x} seconds.")
+            time.sleep(e.x)
+        c += 1
+        time.sleep(0.1)
+        msg.edit_text(
+            f"{Emoji.HEAVY_MINUS_SIGN} Started...\n{Emoji.HOURGLASS_NOT_DONE} Timeout: {flood_timeout} \n{Emoji.MOBILE_PHONE_WITH_ARROW} Messages Sent: {c}")
+        time.sleep(flood_timeout)
+    msg.edit_text(
+        f"{Emoji.HEAVY_CHECK_MARK} Done!\n{Emoji.HOURGLASS_DONE} Timeout: {flood_timeout} \n{Emoji.MOBILE_PHONE_WITH_ARROW} Messages Sent: {c}")
+
+
+@bot.on_message(Filters.user("self") & Filters.command("setfloodtimeout", prefixes=[".", "/", "!", "#"]))
+def setfloodtimeout_command(Client, msg):
+    global flood_timeout
+    if len(msg.command) < 2:
+        msg.edit_text(
+            f"{Emoji.CROSS_MARK} Please Use:\n<code>/setfloodtimeout timeout</code>\nNote: timout needs to be in seconds.")
+        return 1
+    timeout = msg.command[1]
+    try:
+        flood_timeout = float(timeout)
+    except ValueError:
+        msg.edit_text(f"{Emoji.CROSS_MARK} Value Error: {timeout} is not a valid number.")
+    else:
+        msg.edit_text(f"{Emoji.HEAVY_CHECK_MARK} Timeout set to: {timeout} seconds.")
+
+
+@bot.on_message(Filters.user("self") & Filters.command("google", prefixes=[".", "/", "!", "#"]))
+def google_command(Client, msg):
+    if len(msg.command) < 2:
+        msg.edit_text(f"{Emoji.CROSS_MARK} Please use:\n<code>/google search</code>")
+        return 1
+    stime = time.time()
+    query = "+".join(msg.command[1:])
+    msg.edit_text(f"{Emoji.GLOBE_WITH_MERIDIANS} Google {Emoji.GLOBE_WITH_MERIDIANS}\n"
+                  f"\n"
+                  f"{Emoji.HEAVY_MINUS_SIGN} Search: http://www.google.com/search?q={query}\n")
+
+
 @bot.on_message(Filters.private & ~Filters.user("self"))
 def on_private_afk_message(Client, msg):
     if not msg.from_user.id in accepted_users:
@@ -357,8 +443,3 @@ def on_private_afk_message(Client, msg):
 
 
 bot.run()
-
-
-
-# TODO aggiungere chat_info zip e json
-# TODO aggiungere chat_photos e user_photos
