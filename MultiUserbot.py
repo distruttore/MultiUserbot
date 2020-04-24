@@ -15,7 +15,7 @@ afkMessage = "Sorry, I'm currently unavaible.\n" \
              "{original_msg}\n" \
              "\n" \
              "Only one message in every 30 seconds will be saved.\n" \
-             "<a href=\"https://github.com/GodSaveTheDoge/MultiUserbot\">Made by GodSaveTheDoge</a>"
+             "<a href=\"https://github.com/GodSaveTheDoge/MultiUserbot\">Made by GodSaveTheDoge with @forzanapolifinoallafine as tester</a>"
 
 import os
 import time
