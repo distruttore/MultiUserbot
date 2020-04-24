@@ -1,11 +1,9 @@
-"""
-Edit This
-"""
-apiId = 993290
-apiHash = "xtpcehdqg9fxnutlkmjut1abewezf5yc"
+import sys
 
-# These are NOT valid apiId and apiHash but they are in the correct format.
-# Take your apiId and apiHash from my.telegram.org/
+if sys.version_info.major != 3:
+    raise Exception("You need python 3")
+elif sys.version_info.minor < 7:
+    print("You should use python 3.7 or higher.\n")
 
 """
 Afk message. {original_msg} is the text
@@ -17,23 +15,14 @@ afkMessage = "Sorry, I'm currently unavaible.\n" \
              "{original_msg}\n" \
              "\n" \
              "Only one message in every 30 seconds will be saved.\n" \
-             ""
+             "<a href=\"https://github.com/GodSaveTheDoge/MultiUserbot\">Made by GodSaveTheDoge</a>"
 
-"""
-Boring stuff
-"""
-
-import sys
-
-if sys.version_info.major != 3:
-    raise Exception("You need python 3")
-elif sys.version_info.minor < 7:
-    print("You should use python 3.7 or higher.\n")
 import os
 import time
 from datetime import datetime
 from pathlib import Path
 import requests
+import bs4
 from pyrogram import Client, Filters, Emoji
 from pyrogram.errors import *
 
@@ -43,20 +32,19 @@ accepted_users = []
 banned_users = []
 bot = Client(
     "Session_MultiUserbot",
-    api_id=apiId,
-    api_hash=apiHash)
+    config_file="MultiUserbot.ini")
 
 
 @bot.on_message(Filters.private)
-def check_saved(Client, msg):
+def check_saved(c, msg):
     global users
-    if not msg.from_user.id in users:
+    if msg.from_user.id not in users:
         users[msg.from_user.id] = 0
     msg.continue_propagation()
 
 
 @bot.on_message(Filters.private & ~Filters.user("self"))
-def logger(Client, msg):
+def logger(c, msg):
     print("[PM] Got a new message from: {}. Text: {}".format(
         "@" + msg.from_user.username if msg.from_user.username else msg.from_user.first_name,
         str(msg.text)[0:50]))
@@ -64,7 +52,7 @@ def logger(Client, msg):
 
 
 @bot.on_message(Filters.user("self") & Filters.command("afk", prefixes=[".", "/", "!", "#"]))
-def afk_command(Client, msg):
+def afk_command(c, msg):
     global afk
     if len(msg.command) == 1:
         msg.edit_text("You are afk" if afk else "You are not afk")
@@ -82,28 +70,30 @@ def afk_command(Client, msg):
 @bot.on_message(Filters.user("self") & (
         Filters.command("accept", prefixes=[".", "/", "!", "#"]) | Filters.command("allow",
                                                                                    prefixes=[".", "/", "!", "#"])))
-def accept_command(Client, msg):
+def accept_command(c, msg):
     global accepted_users
     global banned_users
     accepted_users.append(msg.chat.id)
-    if msg.chat.id in banned_users: banned_users.remove(msg.chat.id)
+    if msg.chat.id in banned_users:
+        banned_users.remove(msg.chat.id)
     msg.edit_text("Accepted {}.".format(msg.chat.first_name))
 
 
 @bot.on_message(Filters.user("self") & (
         Filters.command("ban", prefixes=[".", "/", "!", "#"]) | Filters.command("deny", prefixes=[".", "/", "!", "#"])))
-def accept_command(Client, msg):
+def accept_command(c, msg):
     global banned_users
     global accepted_users
     banned_users.append(msg.chat.id)
-    if msg.chat.id in accepted_users: accepted_users.remove(accepted_users)
+    if msg.chat.id in accepted_users:
+        accepted_users.remove(accepted_users)
     msg.edit_text("Banned {}.".format(msg.chat.first_name))
 
 
 @bot.on_message(Filters.user("self") & (
         Filters.command("unaccept", prefixes=[".", "/", "!", "#"]) | Filters.command("unallow",
                                                                                      prefixes=[".", "/", "!", "#"])))
-def accept_command(Client, msg):
+def accept_command(c, msg):
     global accepted_users
     accepted_users.remove(msg.chat.id)
     msg.edit_text("Removed {} from accepted list.".format(msg.chat.first_name))
@@ -112,15 +102,16 @@ def accept_command(Client, msg):
 @bot.on_message(Filters.user("self") & (
         Filters.command("unban", prefixes=[".", "/", "!", "#"]) | Filters.command("undeny",
                                                                                   prefixes=[".", "/", "!", "#"])))
-def accept_command(Client, msg):
+def accept_command(c, msg):
     global banned_users
     banned_users.remove(msg.chat.id)
-    if msg.chat.id in accepted_users: accepted_users.remove(accepted_users)
+    if msg.chat.id in accepted_users:
+        accepted_users.remove(accepted_users)
     msg.edit_text("Unbanned {}.".format(msg.chat.first_name))
 
 
 @bot.on_message(Filters.user("self") & Filters.command("commands", prefixes=[".", "/", "!", "#"]))
-def commands_command(Client, msg):
+def commands_command(c, msg):
     msg.edit_text("Avaiable Commands:\n"
                   "/afk - see if you are afk\n"
                   "/afk on - turn on afk\n"
@@ -137,13 +128,13 @@ def commands_command(Client, msg):
                   "/google keywords - it'll make a google search with keywords.\n"
                   "/flood amount text - send amount times text.\n"
                   "/setfloodtimeout time - sets the timeout of /flood at time seconds. (default to 1)\n"
-                  ""
+                  "/wikipedia lang page - parses the specified page. (lang = it/en...)\n"
                   "\n"
                   "Prefixes: . / ! #")
 
 
 @bot.on_message(Filters.user("self") & Filters.command("info", prefixes=[".", "/", "!", "#"]) & Filters.reply)
-def info_command(Client, msg):
+def info_command(c, msg):
     if len(msg.command) == 1:
         user_chat = bot.get_chat(msg.reply_to_message.from_user.id)
         msg.edit_text(f"{Emoji.INFORMATION} Info {Emoji.INFORMATION}\n\n"
@@ -151,7 +142,7 @@ def info_command(Client, msg):
                       f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} Name: `{msg.reply_to_message.from_user.first_name}`\n"
                       f"{Emoji.BUST_IN_SILHOUETTE} Last Name: `{msg.reply_to_message.from_user.last_name}`\n"
                       f"{Emoji.LINK} Username: `{msg.reply_to_message.from_user.username}`\n" +
-                      (f"{Emoji.TRIDENT_EMBLEM} Bio: {user_chat.description}\n" if user_chat.description else "") +
+                      (f"{Emoji.TRIDENT_EMBLEM} Bio: `{user_chat.description}`\n" if user_chat.description else "") +
                       (
                           f"{Emoji.DESKTOP_COMPUTER} Dc: `{msg.reply_to_message.from_user.dc_id}`\n" if msg.reply_to_message.from_user.dc_id else f"{Emoji.DESKTOP_COMPUTER} Dc: `Unknown`\n") +
                       (f"{Emoji.TRIDENT_EMBLEM} Status: `{msg.reply_to_message.from_user.status}`\n" +
@@ -175,7 +166,8 @@ def info_command(Client, msg):
                            f"{Emoji.BLOND_HAIRED_MAN_LIGHT_SKIN_TONE} Name: `{msg.reply_to_message.from_user.first_name}`\n"
                            f"{Emoji.BUST_IN_SILHOUETTE} Last Name: `{msg.reply_to_message.from_user.last_name}`\n"
                            f"{Emoji.LINK} Username: `{msg.reply_to_message.from_user.username}`\n" +
-                           (f"{Emoji.TRIDENT_EMBLEM} Bio: {user_chat.description}\n" if user_chat.description else "") +
+                           (
+                               f"{Emoji.TRIDENT_EMBLEM} Bio: `{user_chat.description}`\n" if user_chat.description else "") +
                            (
                                f"{Emoji.DESKTOP_COMPUTER} Dc: `{msg.reply_to_message.from_user.dc_id}`\n" if msg.reply_to_message.from_user.dc_id else f"{Emoji.DESKTOP_COMPUTER} Dc: `Unknown`\n") +
                            (f"{Emoji.TRIDENT_EMBLEM} Status: `{msg.reply_to_message.from_user.status}`\n" +
@@ -205,11 +197,12 @@ def info_command(Client, msg):
 
 
 @bot.on_message(Filters.user("self") & ~Filters.private & Filters.command("leave", prefixes=[".", "/", "!", "#"]))
-def leave_command(Client, msg): msg.chat.leave()
+def leave_command(c, msg):
+    msg.chat.leave()
 
 
 @bot.on_message(Filters.user("self") & Filters.command("chatinfo", prefixes=[".", "/", "!", "#"]))
-def chat_info_command(Client, msg):
+def chat_info_command(c, msg):
     tchat = bot.get_chat(msg.chat.id)
     if bot.get_profile_photos_count(msg.chat.id) > 0:
         uphoto = bot.get_profile_photos(msg.chat.id, limit=1)[0]
@@ -242,7 +235,7 @@ def chat_info_command(Client, msg):
 
 
 @bot.on_message(Filters.reply & Filters.user("self") & Filters.command("paste", prefixes=[".", "/", "!", "#"]))
-def paste_command(Client, msg):
+def paste_command(c, msg):
     stime = time.time()
     msg.edit_text(f"{Emoji.GLOBE_WITH_MERIDIANS} PASTE {Emoji.GLOBE_WITH_MERIDIANS}\n"
                   f"\n"
@@ -258,14 +251,15 @@ def paste_command(Client, msg):
                                                     f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}"); return 1
     msg.edit_text(f"{Emoji.GLOBE_WITH_MERIDIANS} PASTE {Emoji.GLOBE_WITH_MERIDIANS}\n"
                   f"\n"
-                  f"{Emoji.LINK} Url: https://del.dog/{requests.post('https://del.dog/documents?frontend=true', data=msg.reply_to_message.text.encode('UTF-8'), headers={'Content-Type': 'application/json, charset=utf-8'}).json()['key']}\n"
+                  f"{Emoji.LINK} Url: {requests.post('https://psty.io/upload', data={'lang':'markdown', 'code':msg.reply_to_message.text.markdown}).url}\n"
                   f"{Emoji.INPUT_LATIN_UPPERCASE} Text: {msg.reply_to_message.text[0:100]}...\n"
                   f"\n"
-                  f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}")
+                  f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}",
+                  disable_web_page_preview=True)
 
 
 @bot.on_message(Filters.reply & Filters.user("self") & Filters.command("short", prefixes=[".", "/", "!", "#"]))
-def short_command(Client, msg):
+def short_command(c, msg):
     stime = time.time()
     msg.edit_text(f"{Emoji.LINK} Shortener {Emoji.LINK}\n"
                   f"\n"
@@ -283,11 +277,13 @@ def short_command(Client, msg):
             f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}")
     if msg.reply_to_message.entities:
         for entity in msg.reply_to_message.entities:
-            if entity.type == "url" or entity.type == "text_link": urls.append(entity)
+            if entity.type == "url" or entity.type == "text_link":
+                urls.append(entity)
 
     if msg.reply_to_message.caption_entities:
         for entity in msg.reply_to_message.caption_entities:
-            if entity.type == "url" or entity.type == "text_link": urls.append(entity)
+            if entity.type == "url" or entity.type == "text_link":
+                urls.append(entity)
 
     if len(urls) <= 0:
         msg.edit_text(f"{Emoji.LINK} Shortener {Emoji.LINK}\n"
@@ -313,11 +309,12 @@ def short_command(Client, msg):
                   f"\n"
                   f"{Emoji.GLOBE_WITH_MERIDIANS} Results:\n"
                   f"{result}"
-                  f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}")
+                  f"{Emoji.TIMER_CLOCK} Time Needed: {round(float(time.time()) - float(stime), 6)}",
+                  disable_web_page_preview=True)
 
 
 @bot.on_message(Filters.user("self") & Filters.reply & Filters.command("download", prefixes=[".", "/", "!", "#"]))
-def download_command(Client, msg):
+def download_command(c, msg):
     stime = time.time()
     msg.edit_text(f"{Emoji.DOWN_ARROW} Download {Emoji.DOWN_ARROW}\n"
                   f"\n"
@@ -357,7 +354,7 @@ def download_command(Client, msg):
 
 
 @bot.on_message(Filters.user("self") & Filters.reply & Filters.command("save", prefixes=[".", "/", "!", "#"]))
-def save_command(Client, msg):
+def save_command(c, msg):
     try:
         msg.reply_to_message.forward("me")
     except Exception as e:
@@ -374,7 +371,7 @@ flood_timeout = 1
 
 
 @bot.on_message(Filters.user("self") & Filters.command("flood", prefixes=[".", "/", "!", "#"]))
-def flood_command(Client, msg):
+def flood_command(c, msg):
     if len(msg.command) < 3:
         msg.edit_text(f"{Emoji.CROSS_MARK} Please use: \n<code>/flood amount text</code>")
         return 1
@@ -403,7 +400,7 @@ def flood_command(Client, msg):
 
 
 @bot.on_message(Filters.user("self") & Filters.command("setfloodtimeout", prefixes=[".", "/", "!", "#"]))
-def setfloodtimeout_command(Client, msg):
+def setfloodtimeout_command(c, msg):
     global flood_timeout
     if len(msg.command) < 2:
         msg.edit_text(
@@ -419,19 +416,48 @@ def setfloodtimeout_command(Client, msg):
 
 
 @bot.on_message(Filters.user("self") & Filters.command("google", prefixes=[".", "/", "!", "#"]))
-def google_command(Client, msg):
+def google_command(c, msg):
     if len(msg.command) < 2:
         msg.edit_text(f"{Emoji.CROSS_MARK} Please use:\n<code>/google search</code>")
         return 1
-    stime = time.time()
     query = "+".join(msg.command[1:])
     msg.edit_text(f"{Emoji.GLOBE_WITH_MERIDIANS} Google {Emoji.GLOBE_WITH_MERIDIANS}\n"
                   f"\n"
                   f"{Emoji.HEAVY_MINUS_SIGN} Search: http://www.google.com/search?q={query}\n")
 
+def get_page(text, langcode):
+    add = ""
+    res = requests.get('https://{}.wikipedia.org/wiki/'.format(langcode) + ' '.join(text.split()))
+
+    res.raise_for_status()
+    wiki = bs4.BeautifulSoup(res.text,"lxml")
+    elems = wiki.select('p')
+    for i in range(4):
+        add = add + (elems[i].getText())
+    return add
+
+
+@bot.on_message(Filters.user("self") & Filters.command("wikipedia", prefixes=[".", "/", "!", "#"]))
+def wikipedia_command(c, msg):
+    if len(msg.command) < 3:
+        msg.edit_text("What should I look up?\n<code>.wikipedia en Doge_(meme)</code>")
+        return 0
+    apiUrl = "https://en.wikipedia.org/w/api.php?action=query&titles={}&format=json"
+    apiRes = requests.get(apiUrl.format(" ".join(msg.command[2:]))).json()
+    if "-1" in apiRes["query"]["pages"]:
+        msg.edit_text(f"No such page: {''.join(msg.command[2:])}")
+        return 0
+    tmp = get_page("".join(msg.command[2:]), msg.command[1])
+    if len(tmp) > 4000:
+        msg.edit_text(tmp[:4000] + "...")
+    else:
+        msg.edit_text(tmp)
+
+
+
 
 @bot.on_message(Filters.private & ~Filters.user("self"))
-def on_private_afk_message(Client, msg):
+def on_private_afk_message(c, msg):
     if not msg.from_user.id in accepted_users:
         if afk:
             msg.delete()
